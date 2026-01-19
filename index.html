@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monky RD</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;}
+body{background:#000;min-height:100vh;overflow:hidden;color:#fff;cursor:none;}
+/* ===== CONTROL DE VOLUMEN ===== */
+.volume-box{
+  position:fixed;
+  bottom:22px;
+  right:22px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+  background:rgba(0,0,0,.75);
+  border-radius:22px;
+  border:2px solid #B06CFF;
+  box-shadow:0 0 18px #B06CFF;
+  z-index:600;
+}
+
+.volume-box i{
+  font-size:20px;
+  cursor:pointer;
+}
+
+.volume-box input[type=range]{
+  width:90px;
+  accent-color:#B06CFF;
+  cursor:pointer;
+}
+
+
+/* ===== CURSOR ===== */
+#customCursor{
+  width:16px;height:16px;border:2px solid #fff;border-radius:50%;
+  position:fixed;pointer-events:none;transform:translate(-50%,-50%);
+  box-shadow:0 0 12px #B06CFF;z-index:9999;
+}
+
+/* ===== REGALO MEJORADO (ESTILO DORADO) ===== */
+#giftBtn {
+  position: fixed; top: 20px; right: 20px;
+  font-size: 38px; cursor: pointer;
+  z-index: 400; display: none; transition: .3s;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+}
+#giftBtn:hover{transform:scale(1.2) rotate(-8deg);}
+
+#giftOverlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  opacity: 0; visibility: hidden;
+  transition: 0.5s; z-index: 998;
+}
+#giftOverlay.show { opacity: 1; visibility: visible; }
+
+#giftMessage {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  background: linear-gradient(180deg, #222 0%, #000 100%);
+  border: 2px solid #d4af37;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.4), inset 0 0 15px rgba(255,255,255,0.1);
+  padding: 35px;
+  border-radius: 20px;
+  text-align: center;
+  width: 380px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 1000;
+}
+
+#giftMessage.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#giftMessage h2 {
+  color: #d4af37;
+  font-style: italic;
+  font-family: 'Georgia', serif;
+  font-size: 26px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+#giftMessage p {
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 25px;
+}
+
+.btn-aceptar {
+  background: linear-gradient(to bottom, #7b2cbf, #3c096c);
+  border: none;
+  color: white;
+  padding: 12px 40px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 16px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  transition: 0.3s;
+}
+
+.btn-aceptar:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+/* ===== DISCORD CARD ===== */
+.discord-card{
+  position:fixed; top:20px; left:20px;
+  display:flex; align-items:center; gap:14px;
+  padding:14px 18px; border-radius:22px;
+  background:#10140F; box-shadow:0 0 28px rgba(176,108,255,.45);
+  z-index:500;
+}
+.avatar-wrap{
+  width:52px;height:52px;border-radius:50%;
+  padding:3px; background:linear-gradient(135deg,#5A1E8C,#5A1E8C);
+}
+.avatar-wrap img{ width:100%;height:100%; border-radius:50%; object-fit:cover; }
+.discord-name{ font-size:13px;font-weight:600; display:flex;align-items:center;gap:8px; margin-bottom:5px; }
+.discord-playing{ font-size:11px;opacity:.75;margin-bottom:4px; }
+.discord-game{ font-size:12px;font-weight:600;letter-spacing:.3px; }
+.online-dot{ width:8px;height:8px;border-radius:50%; background:#5A1E8C;box-shadow:0 0 8px #5A1E8C; }
+
+/* ===== MIS COMPAÑEROS ===== */
+.companeros-top{
+  position:fixed; top:110px; left:20px; width:260px;
+  background:rgba(16,20,15,.85); border-radius:18px;
+  padding:16px; box-shadow:0 0 22px rgba(176,108,255,.45);
+  z-index:450;
+}
+.companeros-top h3{ text-align:center; font-size:15px; margin-bottom:12px; color:#ffffff; letter-spacing:1px; }
+.companeros-top a{
+  display:block; text-align:center; margin:8px 0; padding:10px 0;
+  border-radius:14px; background:rgba(255,255,255,.08);
+  color:#ffffff; text-decoration:none; font-size:14px; transition:.3s;
+}
+.companeros-top a:hover{ transform:scale(1.05); background:rgba(176,108,255,.45); }
+
+/* ===== INTRO ===== */
+#enterScreen{
+  position:fixed;inset:0; display:flex;justify-content:center;align-items:center;
+  cursor:pointer;z-index:999;
+}
+#enterScreen::after{ content:'';position:absolute;inset:0; background:rgba(0,0,0,.55); }
+#introVideo{ position:absolute;inset:0;width:100%;height:100%; object-fit:cover; }
+.enter-content{position:relative;z-index:2;text-align:center;}
+
+/* ===== VIDEO FONDO ===== */
+#bgVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;}
+.overlay{position:fixed;inset:0;background:radial-gradient(circle,rgba(0,0,0,.2),rgba(0,0,0,.85));z-index:-1;}
+
+/* ===== CARD CENTRAL ===== */
+.card{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(.9);
+  opacity:0;
+  background:rgba(16,20,15,.85); /* igual a Mis Compañeros */
+  backdrop-filter:blur(16px);
+  border-radius:24px;
+  padding:80px 30px 40px;
+  width:380px;
+  text-align:center;
+  transition:.6s;
+  border:2px solid #B06CFF;
+  box-shadow:0 0 22px rgba(176,108,255,.45);
+  z-index:400;
+}
+
+.card.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+
+.logo{
+  width:120px;height:120px;border-radius:50%;
+  border:4px solid #B06CFF;
+  position:absolute;top:-60px;left:50%;
+  transform:translateX(-50%);
+}
+
+.card h1{font-size:32px;margin-bottom:18px;}
+.card p{font-size:13px;letter-spacing:1px;margin-top:6px;opacity:.85;}
+
+.card{
+  position:absolute;
+  z-index:400; /* arriba del canvas */
+}
+
+/* ===== ICONOS ===== */
+.icons{display:flex;justify-content:center;gap:26px;margin-top:46px;}
+.icon{
+  width:56px;height:56px;border-radius:18px;
+  background:rgba(255,255,255,.08);
+  display:flex;justify-content:center;align-items:center;
+  font-size:24px;color:#fff;
+  transition:.3s;box-shadow:0 0 14px #B06CFF;
+}
+.icon:hover{transform:scale(1.15);}
+/* ===== TOOLTIP ICONOS ARRIBA ===== */
+.icon{
+  position:relative;
+}
+
+.icon span{
+  position:absolute;
+  bottom:-45px; /* estaba en -35 */
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.85);
+  color:#fff;
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:10px;
+  opacity:0;
+  pointer-events:none;
+  white-space:nowrap;
+  transition:.3s;
+  box-shadow:0 0 10px rgba(176,108,255,.6);
+}
+
+.icon:hover span{
+  opacity:1;
+  bottom:-55px; /* estaba en -45 */
+}
+
+
+/* ===== NIEVE ===== */
+#snow{
+  position:fixed;
+  inset:0;
+  pointer-events:auto;
+  z-index:200; /* debajo de la card */
+}
+</style>
+</head>
+
+<body>
+
+<div id="customCursor"></div>
+<canvas id="snow"></canvas>
+
+<div id="giftBtn">💌</div>
+<div id="giftOverlay"></div>
+<div id="giftMessage">
+  <h2>El Señor Jesús dijo, “Yo soy el camino, y la verdad, y la vida; nadie viene al Padre sino por mí” (Juan 14:6).</h2>
+  <p></p>
+  <button class="btn-aceptar" onclick="closeGift()">Cerrar</button>
+</div>
+
+<div class="discord-card">
+  <div class="avatar-wrap">
+    <img src="logo.png">
+  </div>
+  <div>
+    <div class="discord-name">
+      Bienvenidos A Mi Web <span class="online-dot"></span>
+    </div>
+    <div class="discord-playing">Profesión</div>
+    <div class="discord-game">Designer Grafico</div>
+  </div>
+</div>
+
+<div class="companeros-top">
+  <h3>Mis Compañeros</h3>
+  <a href="http://102.129.137.193:7771//" target="_blank">Angel Morales</a>
+  <a href="https://dzdanii.github.io/Dzdanii_/" target="_blank">Dzdanii_</a>
+</div>
+
+<div id="enterScreen">
+  <video id="introVideo" autoplay muted loop>
+    <source src="intro.mp4" type="video/mp4">
+  </video>
+  <div class="enter-content">
+    <h1>Haz click para entrar</h1>
+    <p><i class="fas fa-headphones"></i> Activar música</p>
+  </div>
+</div>
+
+<video id="bgVideo" autoplay muted loop>
+  <source src="video.mp4" type="video/mp4">
+</video>
+<div class="overlay"></div>
+
+<audio id="bgMusic" loop>
+  <source src="musica.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="clickSound">
+  <source src="click.mp3" type="audio/mpeg">
+</audio>
+
+<div class="volume-box">
+  <i id="icon" class="fas fa-volume-up"></i>
+  <input type="range" id="volumeControl" min="0" max="100" value="70">
+</div>
+
+
+<div class="card" id="card">
+  <img src="logo.png" class="logo">
+  <h1>Monky RD</h1>
+  <p>Streamer • Gamer • Creador de Contenido</p>
+
+<div class="icons">
+  <a href="https://www.youtube.com/@Monky_RD" class="icon">
+    <i class="fab fa-youtube"></i>
+    <span>YouTube</span>
+  </a>
+
+  <a href="https://www.paypal.me/darlinamador" class="icon">
+    <i class="fab fa-paypal"></i>
+    <span>PayPal</span>
+  </a>
+
+  <a href="https://discord.gg/cgFMbCGZrf" class="icon">
+    <i class="fab fa-discord"></i>
+    <span>Discord</span>
+  </a>
+
+  <a href="https://www.tiktok.com/@monky_rd01" class="icon">
+    <i class="fab fa-tiktok"></i>
+    <span>TikTok</span>
+  </a>
+</div>
+
+
+<div style="margin-top:26px;opacity:.6;font-size:13px;text-align:center">
+  © 2026 · ☔ﾟ 🥷𝗠ó𝙣𝗸ÿ🥷 ﾟ☔
+</div>
+
+<div style="
+  position:absolute;
+  bottom:18px;
+  left:20px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  opacity:.65;
+">
+  <i class="fas fa-eye"></i>
+  <span id="visitCount">0</span>
+</div>
+
+
+
+<script>
+const music = document.getElementById("bgMusic"); // GLOBAL
+const video = document.getElementById("bgVideo");
+const icon = document.getElementById("icon");
+const enter = document.getElementById("enterScreen");
+const card = document.getElementById("card");
+const cursor = document.getElementById("customCursor");
+const giftBtn = document.getElementById("giftBtn");
+const giftMessage = document.getElementById("giftMessage");
+const giftOverlay = document.getElementById("giftOverlay");
+const clickSound = document.getElementById("clickSound");
+let playing = false;
+
+// Cursor
+document.addEventListener("mousemove", e => {
+  cursor.style.left = e.clientX + "px";
+  cursor.style.top = e.clientY + "px";
+});
+
+// Click en enterScreen
+enter.onclick = () => {
+  clickSound.currentTime = 0;
+  clickSound.play();
+  music.currentTime = 0;
+music.play().then(()=>{
+  console.log("Música iniciada");
+}).catch(err=>{
+  console.log("Bloqueado por el navegador", err);
+});
+
+  video.play();
+  icon.className = "fas fa-volume-up";
+  enter.style.display = "none";
+  card.classList.add("show");
+  giftBtn.style.display = "block";
+  playing = true;
+};
+
+// Pausar / Reproducir música
+function pausarMusica() {
+  if (music && !music.paused) {
+    music.pause();
+  }
+}
+
+function reproducirMusica() {
+  if (music && music.paused) {
+    music.play().catch(()=>{});
+  }
+}
+
+// Lógica del regalo
+giftBtn.onclick = () => {
+  giftMessage.classList.add("show");
+  giftOverlay.classList.add("show");
+
+  pausarMusica(); // ✅ Pausar música
+};
+
+function closeGift() {
+  giftMessage.classList.remove("show");
+  giftOverlay.classList.remove("show");
+
+  reproducirMusica(); // ✅ Reanudar música
+  clickSound.play();
+}
+</script>
+
+
+<script>
+const canvas = document.getElementById("snow");
+const ctx = canvas.getContext("2d");
+
+let w = canvas.width = innerWidth;
+let h = canvas.height = innerHeight;
+
+window.addEventListener("resize", ()=>{
+  w = canvas.width = innerWidth;
+  h = canvas.height = innerHeight;
+});
+
+const flakes = [];
+const particles = [];
+const EMOJI = "👺";
+
+for(let i=0;i<40;i++){
+  flakes.push(createFlake());
+}
+
+function createFlake(){
+  return {
+    x: Math.random()*w,
+    y: Math.random()*h,
+    size: Math.random()*18 + 14,
+    speed: Math.random()*0.6 + 0.4
+  };
+}
+
+function explode(x,y){
+  for(let i=0;i<12;i++){
+    particles.push({
+      x,
+      y,
+      vx:(Math.random()-0.5)*4,
+      vy:(Math.random()-0.5)*4,
+      life:30
+    });
+  }
+}
+
+canvas.addEventListener("click", e=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  flakes.forEach(f=>{
+    if(
+      mx > f.x - f.size &&
+      mx < f.x + f.size &&
+      my > f.y - f.size &&
+      my < f.y + f.size
+    ){
+      explode(f.x,f.y);
+      f.y = -20;
+      f.x = Math.random()*w;
+    }
+  });
+});
+
+function draw(){
+  ctx.clearRect(0,0,w,h);
+
+  flakes.forEach(f=>{
+    ctx.font = f.size + "px Arial";
+    ctx.fillText(EMOJI, f.x, f.y);
+    f.y += f.speed;
+
+    if(f.y > h){
+      f.y = -20;
+      f.x = Math.random()*w;
+    }
+  });
+
+  particles.forEach((p,i)=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,2,0,Math.PI*2);
+    ctx.fillStyle="rgba(176,108,255,.8)";
+    ctx.fill();
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    if(p.life<=0) particles.splice(i,1);
+  });
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+<script>
+// ❌ Bloquear clic derecho
+document.addEventListener("contextmenu", function(e){
+  e.preventDefault();
+});
+
+// ❌ Bloquear F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+document.addEventListener("keydown", function(e){
+  // F12
+  if (e.key === "F12") {
+    e.preventDefault();
+  }
+
+  // Ctrl + Shift + I / J
+  if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J")) {
+    e.preventDefault();
+  }
+
+  // Ctrl + U (ver código fuente)
+  if (e.ctrlKey && e.key === "u") {
+    e.preventDefault();
+  }
+});
+</script>
+<script>
+const volume = document.getElementById("volumeControl");
+
+// volumen inicial
+music.volume = 0.7;
+
+// cambiar volumen
+volume.addEventListener("input", ()=>{
+  music.volume = volume.value / 100;
+
+  if(music.volume === 0){
+    icon.className = "fas fa-volume-mute";
+  } else if(music.volume < 0.5){
+    icon.className = "fas fa-volume-down";
+  } else {
+    icon.className = "fas fa-volume-up";
+  }
+});
+
+// click en icono = mute rápido
+icon.onclick = ()=>{
+  if(music.volume > 0){
+    music.volume = 0;
+    volume.value = 0;
+    icon.className = "fas fa-volume-mute";
+  } else {
+    music.volume = 0.7;
+    volume.value = 70;
+    icon.className = "fas fa-volume-up";
+  }
+};
+</script>
+<script>
+/* ===== CONTADOR DE VISITAS (1 por persona) ===== */
+let visits = localStorage.getItem("monky_visits");
+
+if (!visits) {
+  visits = 1;
+  localStorage.setItem("monky_visits", visits);
+} else {
+  visits = parseInt(visits);
+}
+
+let total = localStorage.getItem("monky_total");
+
+if (!total) {
+  total = visits;
+} else {
+  total = parseInt(total);
+}
+
+document.getElementById("visitCount").innerText = total;
+</script>
+
+</body>
+</html>
